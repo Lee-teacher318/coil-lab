@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>그네형 코일 실험실</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: lab bench — large apparatus stage on the left, power-supply style control panel on the right, observation log below */
+:root{
+  --bg:#edf1f4; --surface:#ffffff; --ink:#1b2430; --muted:#5b6977; --line:#d3dbe2;
+  --copper:#b8642a; --north:#d23f37; --south:#2c66c6; --accent:#1f5f8b;
+  --board:#a9592c; --board-edge:#6e3518; --metal:#97a3ae; --bar:#3657c9;
+  --acrylic:rgba(190,215,235,.45); --stand:#f3f2ee; --stand-edge:#c9c6bd;
+  --psu:#e6e8e3; --psu-edge:#c7cbc4; --lcd:#161a17; --lcd-red:#ff4c38; --lcd-dim:#4a1a14;
+  --good:#1d7a4c; --warn:#b56b00; --field:#2c66c6;
+  --f-display:"Black Han Sans","IBM Plex Sans KR",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11161c; --surface:#19212a; --ink:#e5ecf2; --muted:#93a2b1; --line:#2b3641;
+  --copper:#e08b4c; --north:#ff6a5e; --south:#5d97f2; --accent:#6fb3e6;
+  --board:#8c4a26; --board-edge:#4f2610; --metal:#6d7a86; --bar:#5d7ae0;
+  --acrylic:rgba(140,180,215,.22); --stand:#d9d7d0; --stand-edge:#9d9a91;
+  --psu:#262d34; --psu-edge:#3a444e; --lcd:#0a0c0a; --lcd-red:#ff5a46; --lcd-dim:#3a1611;
+  --good:#4cc98a; --warn:#f0a63a; --field:#6fa6f5; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#11161c; --surface:#19212a; --ink:#e5ecf2; --muted:#93a2b1; --line:#2b3641;
+  --copper:#e08b4c; --north:#ff6a5e; --south:#5d97f2; --accent:#6fb3e6;
+  --board:#8c4a26; --board-edge:#4f2610; --metal:#6d7a86; --bar:#5d7ae0;
+  --acrylic:rgba(140,180,215,.22); --stand:#d9d7d0; --stand-edge:#9d9a91;
+  --psu:#262d34; --psu-edge:#3a444e; --lcd:#0a0c0a; --lcd-red:#ff5a46; --lcd-dim:#3a1611;
+  --good:#4cc98a; --warn:#f0a63a; --field:#6fa6f5; color-scheme:dark;}
+*{box-sizing:border-box}
+html{color-scheme:light}body{margin:0}[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;-webkit-tap-highlight-color:transparent}
+button,label,input,summary{touch-action:manipulation}
+.wrap{max-width:1320px;margin:0 auto;padding-inline:20px;padding-block:18px 48px;display:grid;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 24px}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--muted);font-weight:500}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(26px,4vw,36px);line-height:1.15;margin:4px 0 0;text-wrap:balance}
+h2{font-size:17px;margin:0;font-weight:700;text-wrap:balance}
+.lede{color:var(--muted);margin:6px 0 0;max-width:62ch}
+.main{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+@media (min-width:1000px){.main{grid-template-columns:minmax(0,1fr) 330px}}
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:0}
+.stage canvas{display:block;width:100%;height:auto;touch-action:none}
+.readout{display:flex;flex-wrap:wrap;gap:6px 22px;padding:10px 16px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.readout b{font-family:var(--f-mono);font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.status-pill{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-weight:700;font-size:13px}
+.status-pill.attract{background:color-mix(in srgb,var(--good) 15%,transparent);color:var(--good)}
+.status-pill.repel{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.status-pill.idle{background:color-mix(in srgb,var(--muted) 15%,transparent);color:var(--muted)}
+.layers{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;border-top:1px solid var(--line);font-size:14px}
+.layers label{display:inline-flex;align-items:center;gap:8px;cursor:pointer;min-height:40px;padding:6px 14px 6px 10px;border:1px solid var(--line);border-radius:999px;user-select:none;-webkit-user-select:none}
+.layers label:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,transparent)}
+.layers input,.latch input{width:20px;height:20px;margin:0;accent-color:var(--accent)}
+/* control panel styled as the bench power supply */
+.panel{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:640px) and (max-width:999px){.panel{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"psu sw" "set sw"}.psu{grid-area:psu}.settings{grid-area:set}.swcard{grid-area:sw;align-self:start}.swcard .switch-btn{min-height:150px}}
+.psu{background:var(--psu);border:1px solid var(--psu-edge);border-radius:12px;padding:14px;display:grid;gap:12px}
+.psu-title{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.12em;color:var(--muted);font-weight:700}
+.lcds{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.lcd{background:var(--lcd);border-radius:6px;padding:8px 10px;display:flex;align-items:baseline;justify-content:space-between}
+.lcd span{font-family:var(--f-mono);font-size:26px;font-weight:600;color:var(--lcd-red);font-variant-numeric:tabular-nums;letter-spacing:.04em;text-shadow:0 0 8px color-mix(in srgb,var(--lcd-red) 45%,transparent)}
+.lcd span.off{color:var(--lcd-dim);text-shadow:none}
+.lcd small{font-family:var(--f-mono);font-size:12px;color:#9a9a9a}
+.ctl{display:grid;gap:6px}
+.ctl-label{display:flex;justify-content:space-between;font-size:14px;font-weight:500}
+.ctl-label output{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.range-row{display:grid;grid-template-columns:46px minmax(0,1fr) 46px;gap:10px;align-items:center}
+.step{font:inherit;font-size:24px;line-height:1;min-height:46px;border-radius:10px;border:1px solid var(--psu-edge);background:var(--surface);color:var(--ink);cursor:pointer}
+.step:active{background:color-mix(in srgb,var(--copper) 15%,var(--surface))}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:40px;background:transparent;margin:0;--pct:50%}
+input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(90deg,var(--copper) var(--pct),var(--line) var(--pct))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;margin-top:-11px;border-radius:50%;background:var(--copper);border:3px solid var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+input[type=range]::-moz-range-track{height:8px;border-radius:4px;background:var(--line)}
+input[type=range]::-moz-range-progress{height:8px;border-radius:4px;background:var(--copper)}
+input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:var(--copper);border:3px solid var(--surface)}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--surface)}
+.seg button{font:inherit;font-size:15px;min-height:48px;padding:10px 6px;border:0;background:transparent;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.seg button + button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 14%,transparent);font-weight:700;color:var(--accent)}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px}
+.switch-btn{font:inherit;font-weight:700;font-size:20px;min-height:96px;padding:18px 10px;-webkit-touch-callout:none;border-radius:12px;border:2px solid var(--north);background:color-mix(in srgb,var(--north) 10%,var(--surface));color:var(--north);cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none;transition:transform .05s}
+.switch-btn.on{background:var(--north);color:#fff;transform:translateY(2px)}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.latch{display:flex;gap:10px;align-items:center;cursor:pointer;min-height:40px;font-size:14px}
+.ghost{min-height:40px}
+summary{min-height:36px;display:list-item}
+/* tablet landscape: keep the whole apparatus + controls on one screen */
+@media (min-width:1000px) and (max-height:920px){.lede{display:none}h1{font-size:28px}header{align-items:center}.wrap{padding-block:12px 40px;gap:12px}}
+.lower{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:560px}
+th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:500}
+td.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
+th.num{text-align:right}
+.empty td{color:var(--muted);text-align:center;padding:18px}
+.row-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.ghost{font:inherit;font-size:12px;padding:5px 10px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}
+details{border-bottom:1px solid var(--line);padding-block:8px}
+details:last-child{border-bottom:0}
+summary{cursor:pointer;font-weight:500}
+details p{margin:6px 0 2px;color:var(--muted)}
+details p strong{color:var(--ink)}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">중학 과학 2 · Ⅶ. 전기와 자기</div>
+      <h1>자기장 안에서 전류가 흐르는 코일이 받는 힘</h1>
+      <p class="lede">그네형 코일 옆에 네오디뮴 자석을 두고 스위치를 눌러 보세요. 자석의 극, 전류의 방향, 전류의 세기를 바꾸면서 코일이 어느 쪽으로, 얼마나 움직이는지 관찰합니다.</p>
+    </div>
+  </header>
+
+  <div class="main">
+    <section class="stage" aria-label="실험 장치">
+      <canvas id="cv" width="800" height="520" aria-label="그네형 코일 장치와 자석"></canvas>
+      <div class="readout">
+        <span>코일의 움직임 <span id="pill" class="status-pill idle">정지</span></span>
+        <span>기울어진 각도 <b id="ang">0.0°</b></span>
+        <span>옆으로 이동한 거리 <b id="dx">0.0 mm</b></span>
+        <span>자석과의 간격 <b id="gap">60 mm</b></span>
+      </div>
+      <div class="layers" role="group" aria-label="보조 표시">
+        <label><input type="checkbox" id="lyField" checked> 자석의 자기장</label>
+        <label><input type="checkbox" id="lyCurrent" checked> 전류 방향</label>
+        <label><input type="checkbox" id="lyForce" checked> 힘의 방향</label>
+        <label><input type="checkbox" id="lyPoles"> 코일의 극 (오른손 법칙)</label>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <div class="psu">
+        <div class="psu-title"><span>DC POWER SUPPLY</span><span id="psuState">STANDBY</span></div>
+        <div class="lcds">
+          <div class="lcd"><span id="lcdV" class="off">0.00</span><small>V</small></div>
+          <div class="lcd"><span id="lcdA" class="off">0.00</span><small>A</small></div>
+        </div>
+        <div class="ctl">
+          <div class="ctl-label"><label for="iSet">전류 세기</label><output id="iOut" for="iSet">1.0 A</output></div>
+          <div class="range-row"><button type="button" class="step" id="iDown" aria-label="전류 0.1 A 줄이기">−</button><input type="range" id="iSet" min="0" max="2" step="0.1" value="1"><button type="button" class="step" id="iUp" aria-label="전류 0.1 A 늘리기">+</button></div>
+        </div>
+      </div>
+
+      <div class="card settings">
+        <div class="ctl">
+          <div class="ctl-label"><span>코일 쪽을 향한 자석의 극</span></div>
+          <div class="seg" role="group" aria-label="자석의 극">
+            <button type="button" id="magN" aria-pressed="true"><span class="dot" style="background:var(--north)"></span>N극</button>
+            <button type="button" id="magS" aria-pressed="false"><span class="dot" style="background:var(--south)"></span>S극</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <div class="ctl-label"><span>집게 연결 (전류 방향)</span></div>
+          <div class="seg" role="group" aria-label="전류 방향">
+            <button type="button" id="dirA" aria-pressed="true">처음대로</button>
+            <button type="button" id="dirB" aria-pressed="false">바꿔 꽂기</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card swcard">
+        <button type="button" class="switch-btn" id="sw">스위치 누르기</button>
+        <label class="latch"><input type="checkbox" id="latch"> 손을 떼도 전류가 계속 흐르게 하기</label>
+        <p class="hint">버튼을 누르고 있는 동안만 전류가 흐릅니다. 손을 떼면 관찰 결과가 아래 표에 기록됩니다.</p>
+      </div>
+    </aside>
+  </div>
+
+  <div class="lower">
+    <section class="card">
+      <div class="row-head">
+        <h2>관찰 기록</h2>
+        <button type="button" class="ghost" id="clearLog">기록 지우기</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th class="num">회차</th><th>자석의 극</th><th>전류 방향</th><th class="num">전류 세기</th><th>코일의 움직임</th><th class="num">최대 각도</th></tr></thead>
+          <tbody id="log"></tbody>
+        </table>
+      </div>
+      <div class="legend"><span>최대 각도: 스위치를 누른 동안 코일이 가장 크게 기울어진 각도</span></div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+(() => {
+  // ---------- model ----------
+  const P = { L: 0.20, m: 0.02, g: 9.8, gamma: 3.0, G: 0.060, K: 0.011, minGap: 0.004, R: 2.4 };
+  const S = { theta: 0, omega: 0, magN: true, fwd: true, I: 1.0, on: false, latch: false,
+              pressMax: 0, pressSigned: 0, pressT: 0, t: 0 };
+
+  // coil face toward magnet: N when clips are "처음대로" (current counter-clockwise seen from the magnet)
+  const coilFace = () => (S.fwd ? 'N' : 'S');
+  const magFace = () => (S.magN ? 'N' : 'S');
+  const sign = () => (coilFace() === magFace() ? -1 : 1); // +1 attract (toward magnet), -1 repel
+  const force = () => (S.on ? sign() * P.K * S.I : 0);
+
+  function step(dt) {
+    const F = force();
+    const a = -(P.g / P.L) * Math.sin(S.theta) + F * Math.cos(S.theta) / (P.m * P.L) - P.gamma * S.omega;
+    S.omega += a * dt; S.theta += S.omega * dt;
+    const maxSin = (P.G - P.minGap) / P.L;
+    if (Math.sin(S.theta) > maxSin) { S.theta = Math.asin(maxSin); if (S.omega > 0) S.omega = -0.15 * S.omega; }
+    if (S.on) {
+      S.pressT += dt;
+      if (Math.abs(S.theta) > S.pressMax) { S.pressMax = Math.abs(S.theta); S.pressSigned = S.theta; }
+    }
+  }
+
+  // ---------- DOM ----------
+  const $ = id => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d');
+  const ly = { field: $('lyField'), current: $('lyCurrent'), force: $('lyForce'), poles: $('lyPoles') };
+
+  function setPressed(a, b, first) { a.setAttribute('aria-pressed', first); b.setAttribute('aria-pressed', !first); }
+  function syncUI() {
+    setPressed($('magN'), $('magS'), S.magN);
+    setPressed($('dirA'), $('dirB'), S.fwd);
+    $('iSet').value = S.I; $('iOut').textContent = S.I.toFixed(1) + ' A';
+    $('iSet').style.setProperty('--pct', (S.I / 2 * 100) + '%');
+  }
+  const toFree = () => syncUI();
+  $('magN').onclick = () => { S.magN = true; toFree(); };
+  $('magS').onclick = () => { S.magN = false; toFree(); };
+  $('dirA').onclick = () => { S.fwd = true; toFree(); };
+  $('dirB').onclick = () => { S.fwd = false; toFree(); };
+  const setI = v => { S.I = Math.round(Math.min(2, Math.max(0, v)) * 10) / 10; toFree(); };
+  $('iSet').oninput = e => setI(parseFloat(e.target.value));
+  $('iDown').onclick = () => setI(S.I - 0.1);
+  $('iUp').onclick = () => setI(S.I + 0.1);
+
+
+  // switch
+  const sw = $('sw');
+  sw.addEventListener('contextmenu', e => e.preventDefault());
+  function switchOn() { if (S.on) return; S.on = true; S.pressMax = 0; S.pressSigned = 0; S.pressT = 0; sw.classList.add('on'); }
+  function switchOff() {
+    if (!S.on) return; S.on = false; sw.classList.remove('on');
+    if (S.pressT > 0.25) addLog();
+  }
+  sw.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    if (S.latch) { S.on ? switchOff() : switchOn(); return; }
+    sw.setPointerCapture?.(e.pointerId); switchOn();
+  });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => sw.addEventListener(t, () => { if (!S.latch) switchOff(); }));
+  sw.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); S.on ? switchOff() : switchOn(); } });
+  window.addEventListener('keydown', e => {
+    if (e.code !== 'Space' || e.repeat) return;
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' && e.target.type !== 'checkbox' && e.target.type !== 'range') return;
+    e.preventDefault();
+    if (S.latch) { S.on ? switchOff() : switchOn(); } else switchOn();
+  });
+  window.addEventListener('keyup', e => { if (e.code === 'Space' && !S.latch) switchOff(); });
+  $('latch').onchange = e => { S.latch = e.target.checked; if (!S.latch) switchOff(); };
+
+  // log
+  const logEl = $('log'); let rows = [], trial = 0;
+  function renderLog() {
+    if (!rows.length) { logEl.innerHTML = '<tr class="empty"><td colspan="6">스위치를 눌렀다 떼면 결과가 여기에 기록됩니다.</td></tr>'; return; }
+    logEl.innerHTML = rows.map(r => `<tr><td class="num">${r.n}</td><td>${r.mag}</td><td>${r.dir}</td><td class="num">${r.I}</td><td>${r.move}</td><td class="num">${r.ang}</td></tr>`).join('');
+  }
+  function addLog() {
+    const deg = S.pressMax * 180 / Math.PI;
+    const move = S.I === 0 || deg < 0.3 ? '움직이지 않음' : (S.pressSigned > 0 ? '자석 쪽으로 끌려옴' : '자석에서 밀려남');
+    trial += 1;
+    rows.push({ n: trial, mag: magFace() + '극', dir: S.fwd ? '처음대로' : '반대로', I: S.I.toFixed(1) + ' A', move, ang: deg.toFixed(1) + '°' });
+    if (rows.length > 30) rows.shift();
+    renderLog();
+  }
+  $('clearLog').onclick = () => { rows = []; trial = 0; renderLog(); };
+
+  // ---------- drawing ----------
+  let C = {};
+  function readColors() {
+    const cs = getComputedStyle(document.documentElement);
+    ['bg','surface','ink','muted','line','copper','north','south','accent','board','board-edge','metal','bar','acrylic','stand','stand-edge','good','warn','field']
+      .forEach(k => C[k] = cs.getPropertyValue('--' + k).trim());
+  }
+  readColors();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', readColors);
+  new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class', 'style'] });
+
+  let W = 800, H = 520, dpr = 1, sc = 1, ox = 0, oy = 0;
+  function resize() {
+    const r = cv.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = Math.max(300, r.width); H = Math.round(W * (W < 560 ? 0.82 : 0.62));
+    // landscape tablet: fit the stage to the visible height so nothing needs scrolling
+    if (window.innerWidth >= 1000) H = Math.max(330, Math.min(H, window.innerHeight - cv.getBoundingClientRect().top - window.scrollY - 120));
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    sc = Math.min(W / 0.40, (H - 36) / 0.40);
+    ox = W * 0.47; oy = H - (0.035 * sc + 24);
+  }
+  let lastW = 0;
+  new ResizeObserver(() => { const w = cv.getBoundingClientRect().width; if (Math.abs(w - lastW) > 1) { lastW = w; resize(); } }).observe(cv);
+  window.addEventListener('resize', resize); resize();
+
+  // oblique projection: x right, y up, z toward viewer
+  const pr = (x, y, z = 0) => [ox + (x - 0.42 * z) * sc, oy - (y - 0.22 * z) * sc];
+
+  function poly(pts, fill, stroke, lw = 1) {
+    ctx.beginPath(); pts.forEach((p, i) => { const q = pr(...p); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }); ctx.closePath();
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke(); }
+  }
+  function box(x0, x1, y0, y1, z0, z1, top, front, side, edge) {
+    poly([[x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1]], top, edge);
+    poly([[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]], front, edge);
+    poly([[x0,y0,z0],[x0,y0,z1],[x0,y1,z1],[x0,y1,z0]], side, edge);
+  }
+  function line(a, b, color, w = 1.5, dash) {
+    const p = pr(...a), q = pr(...b);
+    ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]);
+    ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash(dash || []); ctx.stroke(); ctx.setLineDash([]);
+  }
+  function arrowPx(x1, y1, x2, y2, color, w = 3, head = 10) {
+    const a = Math.atan2(y2 - y1, x2 - x1);
+    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = w; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * head * 0.6, y2 - Math.sin(a) * head * 0.6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - head * Math.cos(a - 0.45), y2 - head * Math.sin(a - 0.45));
+    ctx.lineTo(x2 - head * Math.cos(a + 0.45), y2 - head * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill();
+    ctx.lineCap = 'butt';
+  }
+  function label(txt, x, y, color, size = 13, weight = 700, align = 'center') {
+    ctx.font = `${weight} ${size}px ${getComputedStyle(document.body).getPropertyValue('--f-body') || 'sans-serif'}`;
+    ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'middle'; ctx.fillText(txt, x, y);
+  }
+  function poleBadge(txt, x, y, col) {
+    ctx.beginPath(); ctx.arc(x, y, 11, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill();
+    label(txt, x, y + 0.5, '#fff', 13, 700);
+  }
+
+  // geometry (metres)
+  const PIV_Y = 0.33, PLATE_TOP = PIV_Y - P.L, COIL_Y = PLATE_TOP - 0.048, RC = 0.036, HZ = 0.045;
+  const MAG_X = 0.006 + P.G; // magnet face x (coil face sits at x ≈ +0.006 when at rest)
+
+  function draw() {
+    const t = S.t;
+    ctx.clearRect(0, 0, W, H);
+    const dxm = P.L * Math.sin(S.theta), lift = P.L * (1 - Math.cos(S.theta));
+    const cx = dxm, cy = COIL_Y + lift, py = PLATE_TOP + lift;
+
+    // base board
+    box(-0.16, 0.19, 0.0, 0.016, -0.09, 0.09, C.board, C['board-edge'], C['board-edge'], 'rgba(0,0,0,.25)');
+    // terminals (front-left) with clips
+    const term = (x, col) => { const p = pr(x, 0.016, 0.07); ctx.fillStyle = col; ctx.fillRect(p[0] - 5, p[1] - 18, 10, 18); ctx.beginPath(); ctx.ellipse(p[0], p[1] - 18, 5, 2.5, 0, 0, Math.PI * 2); ctx.fill(); return p; };
+    const tRed = term(-0.13, C.north), tBlk = term(-0.10, '#2a2a2a');
+    // clip leads off the board to the PSU (left edge)
+    const clip = (p, col, off) => { ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(p[0], p[1] - 14); ctx.bezierCurveTo(p[0] - 30, p[1] + 10 + off, 30, p[1] + 30 + off, 0, p[1] + 36 + off); ctx.stroke(); };
+    clip(S.fwd ? tRed : tBlk, C.north, 0); clip(S.fwd ? tBlk : tRed, '#3a3a3a', 8);
+
+    // posts (back) + top bar
+    line([-0.11, 0.016, -0.06], [-0.11, PIV_Y + 0.01, -0.06], C.metal, 5);
+    line([0.12, 0.016, -0.06], [0.12, PIV_Y + 0.01, -0.06], C.metal, 5);
+    box(-0.125, 0.135, PIV_Y, PIV_Y + 0.016, -0.075, -0.045, C.bar, C.bar, C.bar, 'rgba(0,0,0,.2)');
+    // cross arm holding pivots
+    line([0, PIV_Y + 0.008, -0.06], [0, PIV_Y + 0.008, 0.06], C.metal, 3);
+
+    // magnet stand (behind magnet, right)
+    const sx0 = MAG_X + 0.007, sx1 = MAG_X + 0.017;
+    box(sx0, sx1 + 0.06, 0.016, 0.024, -0.05, 0.05, C.stand, C['stand-edge'], C['stand-edge'], C['stand-edge']);
+    box(sx0, sx1, 0.016, 0.16, -0.05, 0.05, C.stand, C.stand, C['stand-edge'], C['stand-edge']);
+
+    // magnet disc: face toward coil at MAG_X, back at sx0
+    const mFace = S.magN ? C.north : C.south, mBack = S.magN ? C.south : C.north;
+    const mc = pr(MAG_X + 0.0035, COIL_Y, 0), mr = 0.014 * sc;
+    const drawDisc = (x, col) => { const p = pr(x, COIL_Y, 0); ctx.beginPath(); ctx.ellipse(p[0], p[1], mr * 0.42, mr, -0.2, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1; ctx.stroke(); };
+    drawDisc(sx0, mBack);
+    { const a = pr(MAG_X, COIL_Y, 0), b = pr(sx0, COIL_Y, 0); ctx.fillStyle = '#b9bec4'; ctx.fillRect(a[0], a[1] - mr * 0.98, b[0] - a[0], mr * 1.96); }
+    drawDisc(MAG_X, mFace);
+    const mf = pr(MAG_X, COIL_Y, 0);
+    label(magFace(), mf[0], mf[1], '#fff', 13, 700);
+
+    // magnet field lines
+    if (ly.field.checked) {
+      ctx.save(); ctx.globalAlpha = 0.75;
+      const into = !S.magN; // S face → field points into magnet (rightward)
+      for (const k of [-2, -1, 0, 1, 2]) {
+        const yy = COIL_Y + k * 0.016;
+        const spread = k * 0.022;
+        const a = pr(MAG_X - 0.002, yy * 0.15 + COIL_Y * 0.85 + k * 0.004, 0);
+        const b = pr(MAG_X - 0.075, yy + spread * 0.6, 0);
+        ctx.strokeStyle = C.field; ctx.lineWidth = 1.4; ctx.setLineDash([5, 5]); ctx.lineDashOffset = (into ? 1 : -1) * t * 18;
+        ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.quadraticCurveTo((a[0] + b[0]) / 2, a[1] + (b[1] - a[1]) * 0.15, b[0], b[1]); ctx.stroke();
+        ctx.setLineDash([]);
+        const mx = (a[0] + b[0]) / 2, my = a[1] + (b[1] - a[1]) * 0.45;
+        if (k !== 0 || true) arrowPx(into ? mx - 6 : mx + 6, my, into ? mx + 6 : mx - 6, my, C.field, 1.6, 8);
+      }
+      ctx.restore();
+      const lp = pr(MAG_X + 0.04, COIL_Y + 0.07, 0);
+      label('자석의 자기장', lp[0], lp[1], C.field, 13, 500, 'left');
+    }
+
+    // wires from pivots to plate (front/back pairs)
+    for (const z of [-0.035, 0.035]) line([0, PIV_Y + 0.004, z], [cx, py, z], C.muted, 1.2);
+
+    // acrylic plate
+    poly([[cx, py, -HZ], [cx, py, HZ], [cx, py - 0.10, HZ], [cx, py - 0.10, -HZ]], C.acrylic, 'rgba(120,150,180,.6)');
+
+    // coil ring (ellipse via param points) — back half, then front half
+    const ring = (t0, t1, col, w) => {
+      ctx.beginPath();
+      for (let i = 0; i <= 40; i++) { const tt = t0 + (t1 - t0) * i / 40; const p = pr(cx, cy + RC * Math.sin(tt), -RC * Math.cos(tt)); i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); }
+      ctx.strokeStyle = col; ctx.lineWidth = w; ctx.stroke();
+    };
+    // param: point (y,z) = (R sin t, -R cos t); increasing t = counter-clockwise seen from the magnet (+x)
+    // z = -R cos t > 0 (front) when cos t < 0 → t in (π/2, 3π/2)
+    ring(-Math.PI / 2, Math.PI / 2, C.copper, 7);
+    ctx.globalAlpha = 0.35; ring(-Math.PI / 2, Math.PI / 2, '#000', 1); ctx.globalAlpha = 1;
+    // leads from plate corners to coil
+    line([cx, py - 0.004, -0.03], [cx, cy + RC, 0], C.copper, 1.5);
+    line([cx, py - 0.004, 0.03], [cx, cy + RC, 0], C.copper, 1.5);
+    ring(Math.PI / 2, 3 * Math.PI / 2, C.copper, 7);
+    ctx.globalAlpha = 0.18; ring(Math.PI / 2, 3 * Math.PI / 2, '#fff', 2); ctx.globalAlpha = 1;
+
+    // current arrows on the front arc
+    if (ly.current.checked && S.on && S.I > 0) {
+      const dir = S.fwd ? 1 : -1;
+      for (let k = 0; k < 4; k++) {
+        const base = Math.PI / 2 + ((k / 4 + (t * 0.25 * dir) % 1 + 1) % 1) * Math.PI;
+        const a = pr(cx, cy + RC * Math.sin(base), -RC * Math.cos(base));
+        const b2 = base + 0.18 * dir;
+        const b = pr(cx, cy + RC * Math.sin(b2), -RC * Math.cos(b2));
+        arrowPx(a[0], a[1], b[0], b[1], C.ink, 2, 8);
+      }
+    }
+
+    // coil poles
+    if (ly.poles.checked && S.on && S.I > 0) {
+      const right = pr(cx + 0.016, cy, 0), left = pr(cx - 0.016, cy, 0);
+      const cf = coilFace(), other = cf === 'N' ? 'S' : 'N';
+      poleBadge(cf, right[0], right[1], cf === 'N' ? C.north : C.south);
+      poleBadge(other, left[0], left[1], other === 'N' ? C.north : C.south);
+    }
+
+    // force arrow
+    if (ly.force.checked && S.on && S.I > 0) {
+      const F = force(), len = Math.min(110, Math.abs(F) / (P.K * 2) * 110 + 24);
+      const p = pr(cx, cy + RC + 0.022, 0), dir = Math.sign(F);
+      arrowPx(p[0] - dir * len / 2, p[1], p[0] + dir * len / 2, p[1], F > 0 ? C.good : C.warn, 4.5, 13);
+      label(F > 0 ? '끌어당기는 힘' : '밀어내는 힘', p[0], p[1] - 16, F > 0 ? C.good : C.warn, 12, 700);
+    }
+
+    // rest position marker
+    const r0 = pr(0, 0.016, 0.09), r1 = pr(0, 0.0, 0.09);
+    ctx.strokeStyle = C.muted; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+    const top0 = pr(0, PLATE_TOP - 0.11, 0.06); ctx.beginPath(); ctx.moveTo(top0[0], top0[1]); ctx.lineTo(r0[0], r0[1]); ctx.stroke(); ctx.setLineDash([]);
+    label('처음 위치', r1[0], r1[1] + 12, C.muted, 11, 500);
+
+    // inset: coil seen from the magnet side
+    drawInset();
+  }
+
+  function drawInset() {
+    const s = Math.max(70, Math.min(110, W * 0.14)), x = W - s - 12, y = 12;
+    ctx.fillStyle = C.surface; ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, s, s + 20, 10) : ctx.rect(x, y, s, s + 20); ctx.fill(); ctx.stroke();
+    label('자석 쪽에서 본 코일', x + s / 2, y + 12, C.muted, 10.5, 500);
+    const cx = x + s / 2, cy = y + 20 + s / 2 - 2, r = s * 0.3;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.strokeStyle = C.copper; ctx.lineWidth = 5; ctx.stroke();
+    if (S.on && S.I > 0) {
+      const ccw = S.fwd; // counter-clockwise when clips are 처음대로
+      ctx.strokeStyle = C.ink; ctx.lineWidth = 2;
+      const a0 = -0.6, a1 = ccw ? a0 - 1.6 : a0 + 1.6;
+      ctx.beginPath(); ctx.arc(cx, cy, r + 9, Math.min(a0, a1), Math.max(a0, a1)); ctx.stroke();
+      const ex = cx + (r + 9) * Math.cos(a1), ey = cy + (r + 9) * Math.sin(a1);
+      const tang = a1 + (ccw ? -Math.PI / 2 : Math.PI / 2);
+      arrowPx(ex - Math.cos(tang) * 2, ey - Math.sin(tang) * 2, ex + Math.cos(tang) * 6, ey + Math.sin(tang) * 6, C.ink, 2, 8);
+      if (ly.poles.checked) { const f = coilFace(); poleBadge(f, cx, cy, f === 'N' ? C.north : C.south); }
+    } else {
+      label('전류 없음', cx, cy, C.muted, 10.5, 500);
+    }
+  }
+
+  // ---------- readouts ----------
+  const pill = $('pill');
+  function updateReadouts() {
+    const deg = S.theta * 180 / Math.PI, dx = P.L * Math.sin(S.theta) * 1000;
+    $('ang').textContent = (deg >= 0 ? '+' : '') + deg.toFixed(1) + '°';
+    $('dx').textContent = (dx >= 0 ? '+' : '') + dx.toFixed(1) + ' mm';
+    $('gap').textContent = Math.max(0, (P.G - P.L * Math.sin(S.theta)) * 1000).toFixed(0) + ' mm';
+    let cls = 'idle', txt = '정지';
+    if (Math.abs(deg) > 0.3) { cls = deg > 0 ? 'attract' : 'repel'; txt = deg > 0 ? '자석 쪽으로' : '자석 반대쪽으로'; }
+    if (pill.className !== 'status-pill ' + cls) pill.className = 'status-pill ' + cls;
+    if (pill.textContent !== txt) pill.textContent = txt;
+    const on = S.on && S.I > 0;
+    const v = $('lcdV'), a = $('lcdA');
+    v.textContent = (S.on ? S.I * P.R : 0).toFixed(2); a.textContent = (S.on ? S.I : 0).toFixed(2);
+    v.classList.toggle('off', !on); a.classList.toggle('off', !on);
+    $('psuState').textContent = S.on ? 'OUTPUT ON' : 'STANDBY';
+  }
+
+  // ---------- loop ----------
+  let last = performance.now();
+  function frame(now) {
+    let dt = Math.min(0.05, (now - last) / 1000); last = now; S.t += dt;
+    const n = Math.ceil(dt / 0.001); for (let i = 0; i < n; i++) step(dt / n);
+    draw(); updateReadouts();
+    requestAnimationFrame(frame);
+  }
+  syncUI(); renderLog();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
